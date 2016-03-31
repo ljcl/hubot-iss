@@ -1,6 +1,6 @@
 {
   "name": "hubot-iss",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Ask your hubot things about the current state of the ISS!",
   "main": "dist/index.js",
   "license": "MIT",
