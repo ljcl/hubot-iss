@@ -63,23 +63,28 @@ module.exports = (robot) => {
         resp = resp[0]
         request({
           url: 'http://api.open-notify.org/iss-pass.json',
-          qs: { lat: resp.latitude, lon: resp.longitude }
+          qs: { lat: resp.latitude, lon: resp.longitude, n: 35 }
         }, function (error, response, body) {
           if (error) throw new Error(error)
           body = JSON.parse(body)
           var riseTimes = body.response
-          message = 'The next 5 computed passes for the ISS from *' + resp.formattedAddress + '* are:\n'
+          var counter = 0
+          message = 'The next few passes for the ISS from *' + resp.formattedAddress + '* are:\n'
           riseTimes.map(function (obj, index) {
             // Make the returned data a little more readable
             timezoneId(resp.latitude + ',' + resp.longitude, (timezone) => {
               timeZoneId = timezone.timeZoneId
               var risetime = moment.unix(obj.risetime)
-              var risetimeLocal = moment.tz(risetime, timeZoneId).format('ddd MMM D, H:mma ZZ')
+              var risehour = moment.tz(risetime, timeZoneId).hour()
+              var risetimeLocal = moment.tz(risetime, timeZoneId)
+              risetimeLocal = moment.unix(risetimeLocal).format('ddd MMM Do, hh:mma ZZ')
               var duration = moment.duration(obj.duration, 'seconds').humanize()
-              message += risetimeLocal + ' (for ' + duration + ')'
-              if (index + 1 !== riseTimes.length) {
-                message += '\n'
-              } else {
+              if ((risehour >= 19)) {
+                message += risetimeLocal + ' (for ' + duration + ')\n'
+              }
+              counter++
+              if (counter >= riseTimes.length) {
+                message += ':satellite:'
                 res.send(message)
               }
             })
