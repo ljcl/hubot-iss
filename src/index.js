@@ -1,10 +1,23 @@
-'use strict'
+//  Description:
+//    Ask hubot about the current or future status of the iss
+//
+//  Commands:
+//    hubot where is the iss now? - Display a google map with the last location of the ISS
+//    hubut when does the iss pass <location>? - Display a list of dates when ISS will flow over a specified location
+//
+//  Author:
+//    ljcl
 
 import moment from 'moment-timezone'
 import request from 'request'
 import GeoCoder from 'node-geocoder'
 const geocoder = GeoCoder('google', 'http')
 
+/**
+ * Query astroviewer and dangerously turn the javascript into parsable JSON.
+ * @param  {object}   options An object containing the latitude, longitude and location name
+ * @param  {Function} cb
+ */
 function astroViewer (options, cb) {
   request({
     url: 'http://astroviewer-sat2c.appspot.com/predictor',
@@ -31,6 +44,11 @@ function astroViewer (options, cb) {
   })
 }
 
+/**
+ * Build up a string based on the astroViewer data
+ * @param  {object}   data Return the astroviewer object
+ * @param  {Function} cb
+ */
 function listPasses (data, cb) {
   var index = 0
   var passes = data.passes
@@ -56,7 +74,7 @@ function listPasses (data, cb) {
 
 module.exports = (robot) => {
   // Respond with the location and a map of the reported location of the ISS
-  robot.hear(/(where is the)? (iss now)/i, (res) => {
+  robot.hear(/(where is the)? (iss now)(\?)?/i, (res) => {
     // Get data from the Open Notify service
     request('http://api.open-notify.org/iss-now.json', function (error, response, body) {
       if (error) throw new Error(error)
@@ -77,7 +95,7 @@ module.exports = (robot) => {
   })
 
   robot.hear(/(when does the)? (iss) (flyover|fly over|pass|pass over) (.*)/i, (res) => {
-    var location = res.match[4]
+    var location = res.match[4].replace(/\?/g, '')
     geocoder.geocode(location, function (err, resp) {
       var message = "Couldn't find a location by that name" // Default return message
       if (err) throw new Error(err)
@@ -89,12 +107,10 @@ module.exports = (robot) => {
           listPasses(result, function (err, message) {
             if (err) throw new Error(err)
             res.send(message)
-          // console.log(message)
           })
         })
       } else {
         res.send(message)
-      // console.log(message)
       }
     })
   })
