@@ -1,12 +1,17 @@
 //  Description:
 //    Ask hubot about the current or future status of the iss
 //
+// Dependencies:
+//   "moment-timezone": "^0.5.3"
+//   "node-geocoder": "^3.9.1"
+//   "request": "^2.69.0"
+//
 //  Commands:
 //    hubot where is the iss now? - Display a google map with the last location of the ISS
 //    hubut when does the iss pass <location>? - Display a list of dates when ISS will flow over a specified location
 //
 //  Author:
-//    ljcl
+//    ljcl <luke@lukeclark.com.au>
 
 import moment from 'moment-timezone'
 import request from 'request'
