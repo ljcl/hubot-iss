@@ -1,43 +1,30 @@
 'use strict'
 
-var Robot = require('hubot/src/robot')
-var TextMessage = require('hubot/src/message').TextMessage
-var expect = require('chai').expect
+const Helper = require('hubot-test-helper')
+const expect = require('chai').expect
+const http = require('http')
 
-describe('hubot', function () {
-  var robot
-  var user
+const helper = new Helper('../src/index.js')
 
-  beforeEach(() => {
-    // create new robot, without http, using the mock adapter
-    robot = new Robot(null, 'mock-adapter', false, 'Hubot')
+describe('hubot', () => {
+  let room
 
-    // configure user
-    user = robot.brain.userForId('1', {
-      name: 'mocha',
-      room: '#mocha'
-    })
+  beforeEach(() => room = helper.createRoom())
+  afterEach(() => room.destroy())
 
-    robot.adapter.on('connected', () => {
-      // load the module under test and configure it for the
-      // robot.  This is in place of external-scripts
-      require('../src/index')(robot)
-    })
-
-    robot.run()
-  })
-
-  afterEach(() => {
-    robot.shutdown()
-  })
-
-  it('should send a message when hearing hello', (done) => {
-    robot.adapter.on('send', (envelope, strings) => {
-      expect(strings[0]).to.match(/it\'s working/)
+  it('should respond when asked where the ISS is', done => {
+    room.user.say('alice', 'hubot where is the iss now?').then(() => {
+      console.log('OH?!')
+      expect(room.messages).to.eql([['alice', 'hubot where is the iss now?']])
+      expect(room.messages).to.match(/maps.googleapis.com\/maps\/api/)
       done()
     })
+  })
 
-    // Send a message to Hubot
-    robot.adapter.receive(new TextMessage(user, 'hello'))
+  it('should respond when asked when the ISS will be near', done => {
+    room.user.say('alice', 'hubot when does the iss pass Sydney?').then(() => {
+      expect(room.messages).to.match(/🛰/)
+      done()
+    })
   })
 })
