@@ -82,21 +82,26 @@ module.exports = (robot) => {
   // Respond with the location and a map of the reported location of the ISS
   robot.hear(/(where is the)? (iss now)(\?)?/i, (res) => {
     // Get data from the Open Notify service
-    request('http://api.open-notify.org/iss-now.json', function (error, response, body) {
-      if (error) throw new Error(error)
-      body = JSON.parse(body)
-      // Create a static google map with the latitude and longitude of the reponse
-      var staticMap = 'https://maps.googleapis.com/maps/api/staticmap?zoom=2&size=400x400&markers=' + body.iss_position.latitude + ',' + body.iss_position.longitude
-      var locInfo = "Looks like it's over water\n" + staticMap // Default message if nothing overwrites it
-      geocoder.reverse({lat: body.iss_position.latitude, lon: body.iss_position.longitude}, function (err, resp) {
-        if (err && resp.raw.status !== 'ZERO_RESULTS') {
-          // No results is technically an error but we don't want to throw it as one
-          throw new Error(err)
-        } else if (resp.raw.status !== 'ZERO_RESULTS') {
-          locInfo = resp[0].formattedAddress + '\n' + staticMap // Use first result
-        }
-        res.send(locInfo)
-      })
+    request('http://api.open-notify.org/iss-now.json', {timeout: 10000}, function (error, response, body) {
+      if (error) {
+        if (error.code !== 'ETIMEDOUT') throw new Error(error)
+        res.send('Can\'t check there whereabouts of the ISS right now :( Try again in a little bit.')
+      } else {
+        body = JSON.parse(body);
+        // Create a static google map with the latitude and longitude of the reponse
+        var staticMap = 'https://maps.googleapis.com/maps/api/staticmap?zoom=2&size=400x400&markers=' + body.iss_position.latitude + ',' + body.iss_position.longitude
+        var locInfo = "Looks like it's over water\n" + staticMap // Default message if nothing overwrites it
+        geocoder.reverse({lat: body.iss_position.latitude, lon: body.iss_position.longitude}, function (err, resp) {
+          console.log(resp)
+          if (err && resp.raw.status !== 'ZERO_RESULTS') {
+            // No results is technically an error but we don't want to throw it as one
+            throw new Error(err)
+          } else if (resp.raw.status !== 'ZERO_RESULTS') {
+            locInfo = resp[0].formattedAddress + '\n' + staticMap // Use first result
+          }
+          res.send(locInfo)
+        })
+      }
     })
   })
 
